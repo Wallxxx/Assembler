@@ -1,47 +1,7 @@
-SYS_EXIT equ 1
-SYS_WRITE equ 4
-SYS_READ equ 3
-SYS_FORK equ 2
-STDIN equ 0
-STDOUT equ 1
+%include "data/messages/messages.asm"
+%include "data/messages/number_to_string.asm"
 
 segment .data
-_messages:
-	new_line_message db 0xA, 0xD
-	new_line_message_len equ $ - new_line_message
-
-	boss_health_message db 'Здоровье босса: ', 0
-	boss_health_message_len equ $ - boss_health_message
-
-	player_health_message db 'Ваше здоровье: ', 0
-	player_health_message_len equ $ - player_health_message
-
-	choise_message db 'Выдерите действие: ', 0xA, 0xD, '1) Атаковать', 0xA, 0xD, '2) Лечиться (3 ед. маны)', 0xA, 0xD
-	choise_message_len equ $ - choise_message
-
-	lose_message db 'Вы проиграли :(', 0xA, 0xD
-	lose_message_len equ $ - lose_message
-
-	win_message db 'Вы победили! :)', 0xA, 0xD
-	win_message_len equ $ - win_message
-
-	start_combat_message db '------------------------', 0xA, 0xD
-	start_combat_message_len equ $ - start_combat_message
-
-	level_message db 'Ваш уровень: ', 0
-	level_message_len equ $ - level_message
-
-	boss_damage_message db 'Изменение здоровья босса: -', 0
-	boss_damage_message_len equ $ - boss_damage_message
-	
-	player_damage_message db 'Изменение вашего здоровья: -', 0
-	player_damage_message_len equ $ - player_damage_message
-
-	player_heal_message db 'Изменение вашего здоровья: +', 0
-	player_heal_message_len equ $ - player_heal_message
-
-	player_mana_message db 'У вас маны: ', 0
-	player_mana_message_len equ $ - player_mana_message
 
 _boss_data:
 	boss_name_1 db 'Босс 1', 0
@@ -120,19 +80,13 @@ _settings:
 	ret
 
 _start:	
+	 
 	call _settings
 
-	mov eax, SYS_WRITE  ; Вызов функции write
-	mov ebx, STDOUT  ; Потом вывода
-	mov ecx, start_combat_message ; Указатель на строку
-	mov edx, start_combat_message_len  ; Кол-во символов в строке
-	int 80h
+	call _clear
+	call _print_start_combat_message
 
-	mov eax, SYS_WRITE  ; Вызов функции write
-	mov ebx, STDOUT  ; Потом вывода
-	mov ecx, level_message ; Указатель на строку
-	mov edx, level_message_len  ; Кол-во символов в строке
-	int 80h
+	call _print_level_message
 
 	mov eax, [level]
 	call _number_to_string
@@ -146,51 +100,27 @@ _combat:
 		inc eax
 		mov [player_mana], eax
 
-		mov eax, SYS_WRITE  ; Вызов функции write
-		mov ebx, STDOUT  ; Потом вывода
-		mov ecx, new_line_message ; Указатель на строку
-		mov edx, new_line_message_len  ; Кол-во символов в строке
-		int 80h
+		call _print_new_line_message
 
-		mov eax, SYS_WRITE  ; Вызов функции write
-		mov ebx, STDOUT  ; Потом вывода
-		mov ecx, start_combat_message ; Указатель на строку
-		mov edx, start_combat_message_len  ; Кол-во символов в строке
-		int 80h
+		call _print_start_combat_message
 
-		mov eax, SYS_WRITE  ; Вызов функции write
-		mov ebx, STDOUT  ; Потом вывода
-		mov ecx, player_health_message ; Указатель на строку
-		mov edx, player_health_message_len  ; Кол-во символов в строке
-		int 80h
+		call _print_player_health_message
 		
 		mov eax, [player_health_value]
 		call _number_to_string
 
-		mov eax, SYS_WRITE  ; Вызов функции write
-		mov ebx, STDOUT  ; Потом вывода
-		mov ecx, player_mana_message ; Указатель на строку
-		mov edx, player_mana_message_len  ; Кол-во символов в строке
-		int 80h
+		call _print_player_mana_message
 
 		mov eax, [player_mana]
 		call _number_to_string
 
-		mov eax, SYS_WRITE  ; Вызов функции write
-		mov ebx, STDOUT  ; Потом вывода
-		mov ecx, boss_health_message ; Указатель на строку
-		mov edx, boss_health_message_len  ; Кол-во символов в строке
-		int 80h
+		call _print_boss_health_message
 
 		mov eax, [boss_health_value]
 		call _number_to_string
 	
 	_fight:
-		mov eax, SYS_WRITE
-		mov ebx, STDOUT
-		mov ecx, choise_message
-		mov edx, choise_message_len
-		int 80h
+		call _print_choise_message
 
 	_bad_choise:
 		mov eax, SYS_READ
@@ -207,11 +137,7 @@ _combat:
 		jmp _bad_choise
 
 	_damage:
-		mov eax, SYS_WRITE  ; Вызов функции write
-		mov ebx, STDOUT  ; Потом вывода
-		mov ecx, player_damage_message ; Указатель на строку
-		mov edx, player_damage_message_len  ; Кол-во символов в строке
-		int 80h
+		call _print_player_damage_message
 
 		mov eax, [boss_power]
 		call _number_to_string
@@ -222,11 +148,7 @@ _combat:
 		sub al, [boss_power]
 		mov byte [player_health_value], al
 
-		mov eax, SYS_WRITE  ; Вызов функции write
-		mov ebx, STDOUT  ; Потом вывода
-		mov ecx, boss_damage_message ; Указатель на строку
-		mov edx, boss_damage_message_len  ; Кол-во символов в строке
-		int 80h
+		call _print_boss_damage_message
 
 		mov eax, [player_power]
 		call _number_to_string
@@ -237,6 +159,7 @@ _combat:
 		sub al, [player_power]
 		mov byte [boss_health_value], al
 
+		call _clear
 		jmp _print_values
 
 	_heal:
@@ -254,74 +177,22 @@ _combat:
 		add al, [player_power]
 		mov byte [player_health_value], al
 
-		mov eax, SYS_WRITE  ; Вызов функции write
-		mov ebx, STDOUT  ; Потом вывода
-		mov ecx, player_heal_message ; Указатель на строку
-		mov edx, player_heal_message_len  ; Кол-во символов в строке
-		int 80h
+		call _print_player_heal_message
 
 		mov eax, [player_power]
 		add eax, [player_power]
 		call _number_to_string
 
+		call _clear
 		jmp _print_values
 
-_number_to_string:
-	_start_convert:
-		sub esp, 12      ; создаём буфер под строку на 10 цифр
-		mov edi, esp       ; (по числу 10-ичных разрядов в 32-битном числе) 
-		add edi, 11          ; + знак (для чисел со знаком)
-		mov byte [edi], 0  ; + /0 на конце, чтобы обозначить конец строки 
-
-							;mov eax, [player_health_value]  ; value - исходное число
-
-	_convert:
-		mov ecx, 10
-
-	_loop_begin:
-		sub edi, 1   ; запись идёт с конца, поэтому указатель сдвигается к началу
-		xor edx, edx
-		div ecx         ; делим value на 10, в остатке получаем младший разряд
-		add edx, '0'    ; конвертируем его в цифру
-		mov byte [edi], dl  ; записываем цифру в буфер
-		cmp eax, 0      ; проверяем все ли разряды вычислены
-		ja _loop_begin     ; для беззнаковых - ja
-
-	_done:
-		; строка готова , указатель на неё в edi
-		; в этом месте должен быть вывод на экран
-		mov eax, SYS_WRITE  ; Вызов функции write
-		mov ebx, STDOUT  ; Потом вывода
-		mov ecx, edi ; Указатель на строку
-		
-		mov edx, 3  ; Кол-во символов в строке
-		int 80h
-
-		mov eax, SYS_WRITE  ; Вызов функции write
-		mov ebx, STDOUT  ; Потом вывода
-		mov ecx, new_line_message ; Указатель на строку
-		mov edx, new_line_message_len  ; Кол-во символов в строке
-		int 80h
-
-		; потом удаляем буфер, когда он уже не нужен
-		add esp, 12
-		ret
-
 _lose:
-	mov eax, SYS_WRITE
-	mov ebx, STDOUT
-	mov ecx, lose_message
-	mov edx, lose_message_len
-	int 80h
+	call _print_lose_message
 
 	jmp _end
 
 _win:
-	mov eax, SYS_WRITE
-	mov ebx, STDOUT
-	mov ecx, win_message
-	mov edx, win_message_len
-	int 80h
+	call _print_win_message
 
 	mov eax, [level]
 	inc eax,
